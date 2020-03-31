@@ -336,26 +336,28 @@ class Trainer(object):
 
 
                 if beam:
-                    k = self.test_rollouts
+                    k = self.test_environment.test_rollouts  # separate beam size from rollouts
                     new_scores = test_scores + beam_probs
                     if i == 0:
                         idx = np.argsort(new_scores)
                         idx = idx[:, -k:]
                         ranged_idx = np.tile([b for b in range(k)], temp_batch_size)
-                        idx = idx[np.arange(k*temp_batch_size), ranged_idx]
+                        idx = idx[np.arange(k * temp_batch_size), ranged_idx]
                     else:
                         idx = self.top_k(new_scores, k)
 
-                    y = idx//self.max_num_actions
-                    x = idx%self.max_num_actions
+                    # y - previous state idx
+                    # x - next action idx
+                    y = idx // self.max_num_actions
+                    x = idx % self.max_num_actions
 
-                    y += np.repeat([b*k for b in range(temp_batch_size)], k)
+                    y += np.repeat([b * k for b in range(temp_batch_size)], k)
                     state['current_entities'] = state['current_entities'][y]
-                    state['next_relations'] = state['next_relations'][y,:]
+                    state['next_relations'] = state['next_relations'][y, :]
                     state['next_entities'] = state['next_entities'][y, :]
                     agent_mem = agent_mem[:, :, y, :]
                     test_action_idx = x
-                    chosen_relation = state['next_relations'][np.arange(temp_batch_size*k), x]
+                    chosen_relation = state['next_relations'][np.arange(temp_batch_size * k), x]
                     beam_probs = new_scores[y, x]
                     beam_probs = beam_probs.reshape((-1, 1))
                     if print_paths:
@@ -574,28 +576,29 @@ if __name__ == '__main__':
     with tf.Session(config=config) as sess:
         trainer.initialize(restore=save_path, sess=sess)
 
-        trainer.test_rollouts = 100
+        # rollouts
+        trainer.test_rollouts = 20
 
+        # dev paths
+        os.mkdir(path_logger_file + "/" + "dev_beam")
+        trainer.path_logger_file_ = path_logger_file + "/" + "dev_beam" + "/paths"
+
+        trainer.test_environment.test_rollouts = 50  # set beam size
+        trainer.test(sess, beam=True, print_paths=True, save_model=False)
+
+        print
+        options['nell_evaluation']
+
+        # test paths
         os.mkdir(path_logger_file + "/" + "test_beam")
         trainer.path_logger_file_ = path_logger_file + "/" + "test_beam" + "/paths"
         with open(output_dir + '/scores.txt', 'a') as score_file:
             score_file.write("Test (beam) scores with best model from " + save_path + "\n")
 
-        # dev paths
-        trainer.test_environment.test_rollouts = 100
-
-        trainer.test(sess, beam=True, print_paths=True, save_model=False)
-
-        print
-        options['nell_evaluation']
-        if options['nell_evaluation'] == 1:
-            nell_eval(path_logger_file + "/" + "dev_beam/" + "pathsanswers",
-                      trainer.data_input_dir + '/sort_test.pairs')
-
-        # test paths
         trainer.test_environment = trainer.test_test_environment
-
+        trainer.test_environment.test_rollouts = 50  # set beam size
         trainer.test(sess, beam=True, print_paths=True, save_model=False)
+
         if options['nell_evaluation'] == 1:
             nell_eval(path_logger_file + "/" + "test_beam/" + "pathsanswers",
                       trainer.data_input_dir + '/sort_test.pairs')
