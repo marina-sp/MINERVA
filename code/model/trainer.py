@@ -344,7 +344,7 @@ class Trainer(object):
                         ranged_idx = np.tile([b for b in range(k)], temp_batch_size)
                         idx = idx[np.arange(k * temp_batch_size), ranged_idx]
                     else:
-                        idx = self.top_k(new_scores, k)
+                        idx = self.top_k(new_scores, k, self.test_rollouts)
 
                     # y - previous state idx
                     # x - next action idx
@@ -513,8 +513,8 @@ class Trainer(object):
         logger.info("Hits@20: {0:7.4f}".format(all_final_reward_20))
         logger.info("auc: {0:7.4f}".format(auc))
 
-    def top_k(self, scores, k):
-        scores = scores.reshape(-1, k * self.max_num_actions)  # [B, (k*max_num_actions)]
+    def top_k(self, scores, k, rollouts):
+        scores = scores.reshape(-1, rollouts * self.max_num_actions)  # [B, (k*max_num_actions)]
         idx = np.argsort(scores, axis=1)
         idx = idx[:, -k:]  # take the last k highest indices # [B , k]
         return idx.reshape((-1))
@@ -581,7 +581,7 @@ if __name__ == '__main__':
 
         # dev paths
         os.mkdir(path_logger_file + "/" + "dev_beam")
-        trainer.path_logger_file_ = path_logger_file + "/" + "dev_beam" + "/paths"
+        trainer.path_logger_file_ = path_logger_file + "/" + "dev_beam" + "/paths"  # fix self.output_dir
 
         trainer.test_environment.test_rollouts = 50  # set beam size
         trainer.test(sess, beam=True, print_paths=True, save_model=False)
