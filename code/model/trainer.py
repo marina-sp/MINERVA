@@ -1,23 +1,25 @@
 from __future__ import absolute_import
 from __future__ import division
-from tqdm import tqdm
+
+import codecs
+import gc
 import json
-import time
-import os
 import logging
+import os
+import resource
+import sys
+import time
+from collections import defaultdict
+
 import numpy as np
 import tensorflow as tf
 from code.model.agent import Agent
-from code.options import read_options
-from code.model.environment import env
-import codecs
-from collections import defaultdict
-import gc
-import resource
-import sys
 from code.model.baseline import ReactiveBaseline
+from code.model.environment import env
 from code.model.nell_eval import nell_eval
+from code.options import read_options
 from scipy.misc import logsumexp as lse
+from tqdm import tqdm
 
 logger = logging.getLogger()
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -478,6 +480,7 @@ class Trainer(object):
         if print_paths:
             logger.info("[ printing paths at {} ]".format(self.output_dir+'/test_beam/'))
             for q in paths:
+                # q - relation, key in paths
                 j = q.replace('/', '-')
                 with codecs.open(self.path_logger_file_ + '_' + j, 'a', 'utf-8') as pos_file:
                     for p in paths[q]:
@@ -577,13 +580,22 @@ if __name__ == '__main__':
         trainer.path_logger_file_ = path_logger_file + "/" + "test_beam" + "/paths"
         with open(output_dir + '/scores.txt', 'a') as score_file:
             score_file.write("Test (beam) scores with best model from " + save_path + "\n")
-        trainer.test_environment = trainer.test_test_environment
+
+        # dev paths
         trainer.test_environment.test_rollouts = 100
 
         trainer.test(sess, beam=True, print_paths=True, save_model=False)
 
-
-        print options['nell_evaluation']
+        print
+        options['nell_evaluation']
         if options['nell_evaluation'] == 1:
-            nell_eval(path_logger_file + "/" + "test_beam/" + "pathsanswers", trainer.data_input_dir+'/sort_test.pairs' )
+            nell_eval(path_logger_file + "/" + "dev_beam/" + "pathsanswers",
+                      trainer.data_input_dir + '/sort_test.pairs')
 
+        # test paths
+        trainer.test_environment = trainer.test_test_environment
+
+        trainer.test(sess, beam=True, print_paths=True, save_model=False)
+        if options['nell_evaluation'] == 1:
+            nell_eval(path_logger_file + "/" + "test_beam/" + "pathsanswers",
+                      trainer.data_input_dir + '/sort_test.pairs')
