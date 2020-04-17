@@ -480,7 +480,8 @@ class Trainer(object):
                 self.save_path = self.model_saver.save(sess, self.model_dir + "model" + '.ckpt')
 
         if print_paths:
-            logger.info("[ printing paths at {} ]".format(self.output_dir+'/test_beam/'))
+            # logger.info("[ printing paths at {} ]".format(self.output_dir+'/test_beam/'))
+            logger.info("[ printing paths at {} ]".format(self.path_logger_file_))
             for q in paths:
                 # q - relation, key in paths
                 j = q.replace('/', '-')
@@ -577,13 +578,13 @@ if __name__ == '__main__':
         trainer.initialize(restore=save_path, sess=sess)
 
         # rollouts
-        trainer.test_rollouts = 20
+        trainer.test_rollouts = 100
 
         # dev paths
         os.mkdir(path_logger_file + "/" + "dev_beam")
         trainer.path_logger_file_ = path_logger_file + "/" + "dev_beam" + "/paths"  # fix self.output_dir
 
-        trainer.test_environment.test_rollouts = 50  # set beam size
+        trainer.test_environment.test_rollouts = 100  # set beam size
         trainer.test(sess, beam=True, print_paths=True, save_model=False)
 
         print
@@ -596,7 +597,7 @@ if __name__ == '__main__':
             score_file.write("Test (beam) scores with best model from " + save_path + "\n")
 
         trainer.test_environment = trainer.test_test_environment
-        trainer.test_environment.test_rollouts = 50  # set beam size
+        trainer.test_environment.test_rollouts = 100  # set beam size
         trainer.test(sess, beam=True, print_paths=True, save_model=False)
 
         if options['nell_evaluation'] == 1:
