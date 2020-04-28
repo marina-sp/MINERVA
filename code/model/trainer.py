@@ -18,7 +18,7 @@ from code.model.baseline import ReactiveBaseline
 from code.model.environment import env
 from code.model.nell_eval import nell_eval
 from code.options import read_options
-from scipy.misc import logsumexp as lse
+from scipy.special import logsumexp as lse
 from tqdm import tqdm
 
 logger = logging.getLogger()
