@@ -23,7 +23,7 @@ from tqdm import tqdm
 
 logger = logging.getLogger()
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-
+tf.compat.v1.disable_eager_execution()
 
 class Trainer(object):
     def __init__(self, params):
@@ -477,7 +477,7 @@ class Trainer(object):
         if save_model:
             if all_final_reward_10 >= self.max_hits_at_10:
                 self.max_hits_at_10 = all_final_reward_10
-                self.save_path = self.model_saver.save(sess, self.model_dir + "model" + '.ckpt', save_format='h5')
+                self.save_path = self.model_saver.save(sess, self.model_dir + "model" + '.ckpt')#, save_format='h5')
 
         if print_paths:
             # logger.info("[ printing paths at {} ]".format(self.output_dir+'/test_beam/'))
@@ -547,7 +547,7 @@ if __name__ == '__main__':
     logger.info('Total number of relations {}'.format(len(options['relation_vocab'])))
     save_path = ''
     config = tf.compat.v1.ConfigProto()
-    config.gpu_options.allow_growth = False
+    #config.gpu_options.allow_growth = False
     config.log_device_placement = False
 
 
