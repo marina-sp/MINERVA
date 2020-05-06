@@ -405,13 +405,8 @@ class Trainer(object):
                 # marina: ensure filtering
                 assert all(se[b, :] == se[b, 0])
                 assert all(rq[b, :] == rq[b, 0])
-                print(all_correct[b], ",",
-                        self.test_test_environment.batcher.store_all_correct[(se[b, 0], rq[b, 0])],",",
-                        self.train_environment.batcher.store_all_correct[(se[b, 0], rq[b, 0])],",",
-                        self.dev_test_environment.batcher.store_all_correct[(se[b, 0], rq[b, 0])],",",
-                        self.test_environment.batcher.store_all_correct[(se[b, 0], rq[b, 0])])
                 assert all_correct[b] == self.test_test_environment.batcher.store_all_correct[(se[b, 0], rq[b, 0])]
-                seen = all_correct[b]
+                seen = all_correct[b].copy()
                 # seen = set()
                 pos=0
                 if self.pool == 'max':
@@ -454,7 +449,7 @@ class Trainer(object):
                     AP += 0
                 else:
                     AP += 1.0/((answer_pos+1))
-                if print_paths:
+                if print_paths and False:
                     qr = self.train_environment.grapher.rev_relation_vocab[self.qr[b * self.test_rollouts]]
                     start_e = self.rev_entity_vocab[episode.start_entities[b * self.test_rollouts]]
                     end_e = self.rev_entity_vocab[episode.end_entities[b * self.test_rollouts]]
