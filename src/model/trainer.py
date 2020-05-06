@@ -13,11 +13,11 @@ from collections import defaultdict
 
 import numpy as np
 import tensorflow as tf
-from code.model.agent import Agent
-from code.model.baseline import ReactiveBaseline
-from code.model.environment import env
-from code.model.nell_eval import nell_eval
-from code.options import read_options
+from src.model.agent import Agent
+from src.model.baseline import ReactiveBaseline
+from src.model.environment import env
+from src.model.nell_eval import nell_eval
+from src.options import read_options
 from scipy.special import logsumexp as lse
 from tqdm import tqdm
 
@@ -313,7 +313,7 @@ class Trainer(object):
             feed_dict[self.range_arr] = np.arange(temp_batch_size * self.test_rollouts)
             feed_dict[self.input_path[0]] = np.zeros(temp_batch_size * self.test_rollouts)
 
-            ####logger code####
+            ####logger src####
             if print_paths:
                 self.entity_trajectory = []
                 self.relation_trajectory = []
@@ -367,7 +367,7 @@ class Trainer(object):
                             self.relation_trajectory[j] = self.relation_trajectory[j][y]
                 previous_relation = chosen_relation
 
-                ####logger code####
+                ####logger src####
                 if print_paths:
                     self.entity_trajectory.append(state['current_entities'])
                     self.relation_trajectory.append(chosen_relation)
@@ -377,7 +377,7 @@ class Trainer(object):
             if beam:
                 self.log_probs = beam_probs
 
-            ####Logger code####
+            ####Logger src####
 
             if print_paths:
                 self.entity_trajectory.append(
