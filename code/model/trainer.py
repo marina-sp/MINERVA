@@ -36,6 +36,7 @@ class Trainer(object):
         self.train_environment = env(params, 'train')
         self.dev_test_environment = env(params, 'dev')
         self.test_test_environment = env(params, 'test')
+        assert self.dev_test_environment.batcher.store_all_correct == self.test_test_environment.batcher.store_all_correct
         self.test_environment = self.dev_test_environment
         self.rev_relation_vocab = self.train_environment.grapher.rev_relation_vocab
         self.rev_entity_vocab = self.train_environment.grapher.rev_entity_vocab
@@ -396,9 +397,22 @@ class Trainer(object):
             AP = 0
             ce = episode.state['current_entities'].reshape((temp_batch_size, self.test_rollouts))
             se = episode.start_entities.reshape((temp_batch_size, self.test_rollouts))
+            rq = episode.query_relation.reshape((temp_batch_size, self.test_rollouts))
+            all_correct = episode.all_answers
+            #print(rq.shape, se.shape, len(all_correct), rq[0, :])
             for b in range(temp_batch_size):
                 answer_pos = None
-                seen = set()
+                # marina: ensure filtering
+                assert all(se[b, :] == se[b, 0])
+                assert all(rq[b, :] == rq[b, 0])
+                print(all_correct[b], ",",
+                        self.test_test_environment.batcher.store_all_correct[(se[b, 0], rq[b, 0])],",",
+                        self.train_environment.batcher.store_all_correct[(se[b, 0], rq[b, 0])],",",
+                        self.dev_test_environment.batcher.store_all_correct[(se[b, 0], rq[b, 0])],",",
+                        self.test_environment.batcher.store_all_correct[(se[b, 0], rq[b, 0])])
+                assert all_correct[b] == self.test_test_environment.batcher.store_all_correct[(se[b, 0], rq[b, 0])]
+                seen = all_correct[b]
+                # seen = set()
                 pos=0
                 if self.pool == 'max':
                     for r in sorted_indx[b]:
@@ -570,12 +584,15 @@ if __name__ == '__main__':
         logger.info("Loading model from {}".format(options["model_load_dir"]))
 
     trainer = Trainer(options)
+    assert trainer.dev_test_environment.batcher.store_all_correct == trainer.test_test_environment.batcher.store_all_correct
     if options['load_model']:
         save_path = options['model_load_dir']
         path_logger_file = trainer.path_logger_file
         output_dir = trainer.output_dir
+    assert trainer.dev_test_environment.batcher.store_all_correct == trainer.test_test_environment.batcher.store_all_correct
     with tf.compat.v1.Session(config=config) as sess:
         trainer.initialize(restore=save_path, sess=sess)
+        assert trainer.dev_test_environment.batcher.store_all_correct == trainer.test_test_environment.batcher.store_all_correct
 
         # rollouts
         trainer.test_rollouts = 100
@@ -585,8 +602,10 @@ if __name__ == '__main__':
         trainer.path_logger_file_ = path_logger_file + "/" + "dev_beam" + "/paths"  # fix self.output_dir
 
         trainer.test_environment.test_rollouts = 100  # set beam size
+        assert trainer.dev_test_environment.batcher.store_all_correct == trainer.test_test_environment.batcher.store_all_correct
         trainer.test(sess, beam=True, print_paths=True, save_model=False)
-
+        assert trainer.dev_test_environment.batcher.store_all_correct == trainer.test_test_environment.batcher.store_all_correct
+        
         print
         options['nell_evaluation']
 
